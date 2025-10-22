@@ -55,7 +55,7 @@ jobs:
       - run: pnpx prettier . --check
         continue-on-error: true
       - name: Build clients before building the project
-        run: STELLAR_SCAFFOLD_ENV=development stellar-scaffold build --build-clients
+        run: sleep 30 && STELLAR_SCAFFOLD_ENV=development stellar-scaffold build --build-clients
       - run: pnpm run install:contracts
       - run: pnpm run build
       - name: Run tests
