@@ -15,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
       - uses: actions/cache@v3
         with:
           path: |
@@ -32,14 +40,6 @@ jobs:
           tag: testing
           network: local
       - run: sudo apt-get update && sudo apt-get install -y libudev-dev libdbus-1-dev pkg-config
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 8
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.15.6
       - name: Check for stellar-scaffold binary
