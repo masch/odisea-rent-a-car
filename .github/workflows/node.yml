@@ -15,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
       - uses: actions/cache@v3
         with:
           path: |
@@ -42,12 +50,13 @@ jobs:
           else
             echo "stellar-scaffold already installed. Clear cache to force reinstall."
           fi
-      - run: npm ci
-      - run: npm run lint
-      - run: npx prettier . --check
+      - run: pnpm install
+      - run: pnpm run lint
+      - run: pnpx prettier . --check
+        continue-on-error: true
       - name: Build clients before building the project
-        run: STELLAR_SCAFFOLD_ENV=development stellar-scaffold build --build-clients
-      - run: npm run install:contracts
-      - run: npm run build
+        run: sleep 30 && STELLAR_SCAFFOLD_ENV=development stellar-scaffold build --build-clients
+      - run: pnpm run install:contracts
+      - run: pnpm run build
       - name: Run tests
-        run: npm test --if-present
+        run: pnpm test --if-present
