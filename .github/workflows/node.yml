@@ -50,7 +50,7 @@ jobs:
           else
             echo "stellar-scaffold already installed. Clear cache to force reinstall."
           fi
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
       - run: pnpm run lint
       - run: pnpx prettier . --check
       - name: Build clients before building the project
