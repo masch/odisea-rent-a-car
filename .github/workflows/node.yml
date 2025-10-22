@@ -42,12 +42,12 @@ jobs:
           else
             echo "stellar-scaffold already installed. Clear cache to force reinstall."
           fi
-      - run: npm ci
-      - run: npm run lint
-      - run: npx prettier . --check
+      - run: pnpm ci
+      - run: pnpm run lint
+      - run: pnpx prettier . --check
       - name: Build clients before building the project
         run: STELLAR_SCAFFOLD_ENV=development stellar-scaffold build --build-clients
-      - run: npm run install:contracts
-      - run: npm run build
+      - run: pnpm run install:contracts
+      - run: pnpm run build
       - name: Run tests
-        run: npm test --if-present
+        run: pnpm test --if-present
