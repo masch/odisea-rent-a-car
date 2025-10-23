@@ -7,7 +7,9 @@ import {
 } from "../utils/local-storage";
 
 interface StellarContextType {
-  currentAcount: string;
+  currentAccount: string;
+  hashId: string;
+  setHashId: React.Dispatch<React.SetStateAction<string>>;
   setCurrentAccount: (name: string) => void;
   getAccount: (name: string) => IAccount | null;
   getCurrentAccountData: () => IAccount | null;
@@ -17,6 +19,7 @@ const StellarAccountContext = createContext<StellarContextType | undefined>(
   undefined,
 );
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useStellarAccounts = () => {
   const context = use(StellarAccountContext);
   if (context === undefined) {
@@ -48,8 +51,12 @@ export const StellarAccountProvider: React.FC<{
     return getAccountFromStorage(currentAccount);
   }, [currentAccount]);
 
+  const [hashId, setHashId] = useState<string>("");
+
   const value: StellarContextType = {
-    currentAcount: currentAccount,
+    currentAccount,
+    hashId,
+    setHashId,
     setCurrentAccount,
     getAccount,
     getCurrentAccountData,

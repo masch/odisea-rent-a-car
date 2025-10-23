@@ -3,10 +3,14 @@ import { useStellarAccounts } from "../providers/StellarAccountProvider";
 import { saveAccountToStorage } from "../utils/local-storage";
 import { stellarService } from "../services/stellar.services";
 import AccountCard from "./AccountCard";
-import { IAccount } from "../interfaces/account";
+import { AccountBalance, IAccount } from "../interfaces/account";
+import useModal from "../hooks/useModal";
+import PaymentModal from "./PaymentModal";
+import StellarExpertLink from "./StellarExpertLink";
 
 export default function AccountManager() {
-  const { getAccount } = useStellarAccounts();
+  const { getAccount, hashId } = useStellarAccounts();
+  const paymentModal = useModal();
   const [, forceUpdate] = useState({});
 
   const bobAccount = getAccount("bob");
@@ -42,6 +46,38 @@ export default function AccountManager() {
     forceUpdate({});
   };
 
+  const refreshAccountBalances = async () => {
+    if (bobAccount) {
+      const balancesData = await stellarService.getAccountBalance(
+        bobAccount.publicKey,
+      );
+      const updatedBob: IAccount = {
+        ...bobAccount,
+        balances: balancesData.map((balance: AccountBalance) => ({
+          amount: balance.amount,
+          assetCode: balance.assetCode,
+        })),
+      };
+      saveAccountToStorage("bob", updatedBob);
+    }
+
+    if (aliceAccount) {
+      const balancesData = await stellarService.getAccountBalance(
+        aliceAccount.publicKey,
+      );
+      const updatedAlice: IAccount = {
+        ...aliceAccount,
+        balances: balancesData.map((balance: AccountBalance) => ({
+          amount: balance.amount,
+          assetCode: balance.assetCode,
+        })),
+      };
+      saveAccountToStorage("alice", updatedAlice);
+    }
+
+    forceUpdate({});
+  };
+
   return (
     <div className="max-w-screen">
       <div className="container mx-auto max-w-7xl">
@@ -73,6 +109,13 @@ export default function AccountManager() {
             <span className="flex items-center gap-2">
               Create Account for Alice
             </span>
+          </button>
+
+          <button
+            onClick={paymentModal.openModal}
+            className="group px-6 py-3 bg-purple-600 text-white font-semibold rounded-xl shadow-lg hover:bg-purple-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
+          >
+            <span className="flex items-center gap-2">Send Payment</span>
           </button>
         </div>
 
@@ -126,6 +169,15 @@ export default function AccountManager() {
           </div>
         )}
       </div>
+
+      {paymentModal.showModal && (
+        <PaymentModal
+          closeModal={paymentModal.closeModal}
+          getAccount={getAccount}
+          onPaymentSuccess={refreshAccountBalances}
+        />
+      )}
+      {hashId && <StellarExpertLink url={hashId} />}
     </div>
   );
 }
