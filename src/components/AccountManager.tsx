@@ -7,11 +7,20 @@ import { AccountBalance, IAccount } from "../interfaces/account";
 import useModal from "../hooks/useModal";
 import PaymentModal from "./PaymentModal";
 import StellarExpertLink from "./StellarExpertLink";
+import CreateAssetModal from "./CreateAssetModal";
+import CreateClaimableModal from "./CreateClaimableModal";
+import ClaimBalanceModal from "./ClaimClaimableModal";
 
 export default function AccountManager() {
   const { getAccount, hashId } = useStellarAccounts();
-  const paymentModal = useModal();
   const [, forceUpdate] = useState({});
+  const paymentModal = useModal();
+  const assetModal = useModal();
+  const [claimableBalanceId, setClaimableBalanceId] = useState<string | null>(
+    null,
+  );
+  const createClaimableModal = useModal();
+  const claimBalanceModal = useModal();
 
   const bobAccount = getAccount("bob");
   const aliceAccount = getAccount("alice");
@@ -100,7 +109,6 @@ export default function AccountManager() {
               Create Account for Bob
             </span>
           </button>
-
           <button
             onClick={() => handleCreateAccount("alice")}
             disabled={!!aliceAccount}
@@ -110,12 +118,33 @@ export default function AccountManager() {
               Create Account for Alice
             </span>
           </button>
-
           <button
             onClick={paymentModal.openModal}
             className="group px-6 py-3 bg-purple-600 text-white font-semibold rounded-xl shadow-lg hover:bg-purple-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
           >
             <span className="flex items-center gap-2">Send Payment</span>
+          </button>
+          <button
+            onClick={assetModal.openModal}
+            className="group px-6 py-3 bg-orange-600 text-white font-semibold rounded-xl shadow-lg hover:bg-orange-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
+          >
+            <span className="flex items-center gap-2">Create Asset</span>
+          </button>
+          <button
+            onClick={createClaimableModal.openModal}
+            className="group px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl shadow-lg hover:bg-amber-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              Create Claimable Balance
+            </span>
+          </button>
+
+          <button
+            onClick={claimBalanceModal.openModal}
+            disabled={!claimableBalanceId}
+            className="group px-6 py-3 bg-green-600 text-white font-semibold rounded-xl shadow-lg hover:bg-green-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
+          >
+            <span className="flex items-center gap-2">Claim Balance</span>
           </button>
         </div>
 
@@ -177,6 +206,32 @@ export default function AccountManager() {
           onPaymentSuccess={refreshAccountBalances}
         />
       )}
+      {assetModal.showModal && (
+        <CreateAssetModal
+          closeModal={assetModal.closeModal}
+          getAccount={getAccount}
+          onPaymentSuccess={refreshAccountBalances}
+        />
+      )}
+
+      {createClaimableModal.showModal && (
+        <CreateClaimableModal
+          closeModal={createClaimableModal.closeModal}
+          getAccount={getAccount}
+          onPaymentSuccess={refreshAccountBalances}
+          onClaimableBalanceCreated={setClaimableBalanceId}
+        />
+      )}
+
+      {claimBalanceModal.showModal && claimableBalanceId && (
+        <ClaimBalanceModal
+          closeModal={claimBalanceModal.closeModal}
+          getAccount={getAccount}
+          claimableBalanceId={claimableBalanceId}
+          onClaimSuccess={refreshAccountBalances}
+        />
+      )}
+
       {hashId && <StellarExpertLink url={hashId} />}
     </div>
   );

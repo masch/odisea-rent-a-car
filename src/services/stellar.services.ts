@@ -1,5 +1,6 @@
 import { AccountBalance } from "../interfaces/account";
 import { IAccountBalanceResponse } from "../interfaces/balance";
+import { ICreateClaimableBalanceResponse } from "../interfaces/claimable-balance";
 import { IKeypair } from "../interfaces/keypair";
 import {
   STELLAR_NETWORK,
@@ -11,6 +12,7 @@ import {
   Asset,
   BadResponseError,
   BASE_FEE,
+  Claimant,
   Horizon,
   Keypair,
   Operation,
@@ -73,6 +75,13 @@ export class StellarService {
     }
   }
 
+  private getAsset(assetCode: string, assetIssuer: string): Asset {
+    if (assetCode != "XLM") {
+      return new Asset(assetCode, assetIssuer);
+    }
+    return Asset.native();
+  }
+
   async getAccountBalance(publicKey: string): Promise<AccountBalance[]> {
     const account = await this.getAccount(publicKey);
 
@@ -114,30 +123,229 @@ export class StellarService {
     }
   }
 
+  async createAsset(
+    issuerSecret: string,
+    distributorSecret: string,
+    assetCode: string,
+    amount: string,
+  ) {
+    const issuerKeys = Keypair.fromSecret(issuerSecret);
+    const distributorKeys = Keypair.fromSecret(distributorSecret);
+    const newAsset = new Asset(assetCode, issuerKeys.publicKey());
+    const assetLimit = Number(amount) * 100;
+
+    try {
+      const distributorAccount = await this.loadAccount(
+        distributorKeys.publicKey(),
+      );
+
+      const trustTransaction = new TransactionBuilder(distributorAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: this.networkPassphrase,
+      })
+        .addOperation(
+          Operation.changeTrust({
+            asset: newAsset,
+            source: distributorKeys.publicKey(),
+            limit: assetLimit.toString(),
+          }),
+        )
+        .setTimeout(30)
+        .build();
+
+      trustTransaction.sign(distributorKeys);
+      await this.server.submitTransaction(trustTransaction);
+
+      const issuerAccount = await this.loadAccount(issuerKeys.publicKey());
+
+      const issueTransaction = new TransactionBuilder(issuerAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: this.networkPassphrase,
+      })
+        .addOperation(
+          Operation.payment({
+            destination: distributorKeys.publicKey(),
+            asset: newAsset,
+            amount,
+          }),
+        )
+        .setTimeout(30)
+        .build();
+
+      issueTransaction.sign(issuerKeys);
+      return await this.submitTransaction(issueTransaction);
+    } catch (error) {
+      console.error("Error creating asset:", error);
+      throw error;
+    }
+  }
+
+  private async checkTrustline(
+    assetIssuer: string,
+    assetCode: string,
+    destinationPubKey: string,
+  ): Promise<boolean> {
+    const account = await this.loadAccount(destinationPubKey);
+    const balances = account.balances;
+    const assetToVerify = new Asset(assetCode, assetIssuer);
+
+    for (const balance of balances) {
+      if ("asset_code" in balance) {
+        const asset = new Asset(balance.asset_code, balance.asset_issuer);
+
+        if (asset.equals(assetToVerify)) return true;
+      }
+    }
+
+    return false;
+  }
+
+  createTrustlineOperation(
+    asset: Asset,
+    source: string,
+    amount: string,
+  ): xdr.Operation<Operation.ChangeTrust> {
+    const assetLimit = Number(amount) * 100;
+
+    return Operation.changeTrust({
+      asset,
+      source,
+      limit: assetLimit.toString(),
+    });
+  }
+
   async payment(
     senderPubKey: string,
     senderSecret: string,
     receiverPubKey: string,
+    receiverSecret: string,
     amount: string,
+    assetCode: string,
   ): Promise<Horizon.HorizonApi.SubmitTransactionResponse> {
     const sourceAccount = await this.loadAccount(senderPubKey);
     const sourceKeypair = Keypair.fromSecret(senderSecret);
+    let hasTrustline: boolean = true;
 
+    const asset = this.getAsset(assetCode, receiverPubKey);
     const transactionBuilder = this.transactionBuilder(sourceAccount);
+
+    if (asset.code !== "XLM" && asset.issuer !== receiverPubKey) {
+      hasTrustline = await this.checkTrustline(
+        receiverPubKey,
+        assetCode,
+        asset.issuer,
+      );
+
+      if (!hasTrustline) {
+        const changeTrustOp = this.createTrustlineOperation(
+          asset,
+          receiverPubKey,
+          amount,
+        );
+        transactionBuilder.addOperation(changeTrustOp);
+      }
+    }
+
     const paymentOperation = this.createPaymentOperation(
       amount,
-      Asset.native(),
+      asset,
       receiverPubKey,
     );
 
-    const transaction = transactionBuilder
-      .addOperation(paymentOperation)
-      .setTimeout(180)
-      .build();
+    transactionBuilder.addOperation(paymentOperation);
+
+    const transaction = transactionBuilder.setTimeout(180).build();
 
     transaction.sign(sourceKeypair);
 
+    if (!hasTrustline) {
+      const recieveKeypair = Keypair.fromSecret(receiverSecret);
+      transaction.sign(recieveKeypair);
+    }
+
     return await this.submitTransaction(transaction);
+  }
+
+  async createClaimableBalance(
+    assetCode: string,
+    amount: string,
+    senderSecretKey: string,
+    destinationSecretKey: string,
+  ): Promise<ICreateClaimableBalanceResponse> {
+    const sourceKeypair = Keypair.fromSecret(senderSecretKey);
+    const destinationKeypair = Keypair.fromSecret(destinationSecretKey);
+    const sourceAccount = await this.server.loadAccount(
+      sourceKeypair.publicKey(),
+    );
+
+    const asset = this.getAsset(assetCode, sourceKeypair.publicKey());
+
+    const claimants = [
+      new Claimant(
+        sourceKeypair.publicKey(),
+        Claimant.predicateUnconditional(),
+      ),
+      new Claimant(
+        destinationKeypair.publicKey(),
+        Claimant.predicateUnconditional(),
+      ),
+    ];
+
+    const createClaimableBalanceOperation = Operation.createClaimableBalance({
+      amount: amount.toString(),
+      asset,
+      claimants: claimants,
+    });
+
+    const transaction = new TransactionBuilder(sourceAccount, {
+      fee: BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(createClaimableBalanceOperation)
+      .setTimeout(180)
+      .build();
+
+    const claimableBalanceId = transaction.getClaimableBalanceId(0);
+
+    transaction.sign(sourceKeypair);
+
+    const response = await this.submitTransaction(transaction);
+    return {
+      transaction: response,
+      claimableBalanceId,
+    };
+  }
+
+  async claimClaimableBalance(
+    claimant: string,
+    claimableBalanceId: string,
+  ): Promise<Horizon.HorizonApi.SubmitTransactionResponse> {
+    const claimantKeypair = Keypair.fromSecret(claimant);
+    const claimantAccount = await this.server.loadAccount(
+      claimantKeypair.publicKey(),
+    );
+
+    const transaction = new TransactionBuilder(claimantAccount, {
+      fee: (await this.server.fetchBaseFee()).toString(),
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(
+        Operation.claimClaimableBalance({
+          balanceId: claimableBalanceId,
+          source: claimantKeypair.publicKey(),
+        }),
+      )
+      .setTimeout(180)
+      .build();
+
+    transaction.sign(claimantKeypair);
+
+    try {
+      return await this.server.submitTransaction(transaction);
+    } catch (error) {
+      this._handleTransactionError(error);
+      throw error; // Re-throw the error after logging
+    }
   }
 
   private async submitTransaction(
@@ -146,34 +354,38 @@ export class StellarService {
     try {
       return await this.server.submitTransaction(transaction);
     } catch (error) {
-      if (error instanceof BadResponseError) {
-        const data = error.response.data as {
-          extras?: {
-            result_codes?: {
-              transaction: string;
-              operations?: string[];
-            };
+      this._handleTransactionError(error);
+      throw error; // Re-throw the error after logging
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _handleTransactionError(error: any) {
+    if (error instanceof BadResponseError) {
+      const data = error.response.data as {
+        extras?: {
+          result_codes?: {
+            transaction: string;
+            operations?: string[];
           };
         };
+      };
 
-        const resultCodes = data?.extras?.result_codes;
+      const resultCodes = data?.extras?.result_codes;
 
-        if (resultCodes) {
-          console.error(
-            "❌ Error en la transacción (Transaction failed):",
-            resultCodes,
-          );
-        } else {
-          console.error(
-            "❌ Error de Horizon (Bad response):",
-            data || error.message,
-          );
-        }
+      if (resultCodes) {
+        console.error(
+          "❌ Error en la transacción (Transaction failed):",
+          resultCodes,
+        );
       } else {
-        console.error("❌ Error general (General error):", error);
+        console.error(
+          "❌ Error de Horizon (Bad response):",
+          data || error.message,
+        );
       }
-
-      throw error; // Re-throw the error after logging
+    } else {
+      console.error("❌ Error general (General error):", error);
     }
   }
 }
