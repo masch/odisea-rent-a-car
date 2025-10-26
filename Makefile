@@ -1,3 +1,7 @@
+ADMIN_KEY := $(shell stellar keys address admin)
+OWNER_KEY := $(shell stellar keys address owner)
+USER_KEY := $(shell stellar keys address user)
+
 .PHONY: run build test
 
 init-local-stellar:
@@ -6,3 +10,76 @@ init-local-stellar:
 run: 
 	pnpm run dev
 
+contract-test:
+	cargo test
+
+contract-build:
+	cargo clean && cargo build --target wasm32v1-none --release && stellar contract optimize --wasm target/wasm32v1-none/release/rent_a_car.wasm
+
+contract-admin-address:
+	@echo $(ADMIN_KEY)
+
+contract-owner-address:
+	@echo $(OWNER_KEY)
+
+contract-user-address:
+	@echo $(USER_KEY)
+
+stellar-create-admin:
+	stellar keys generate admin --network testnet --fund
+
+stellar-create-owner:
+	stellar keys generate owner --network testnet --fund
+
+stellar-create-user:
+	stellar keys generate user --network testnet --fund
+
+contract-deploy:
+	stellar contract deploy \
+	--wasm target/wasm32v1-none/release/rent_a_car.optimized.wasm \
+	--source admin \
+	--network testnet \
+	--alias rent_a_car-contract \
+	-- \
+	--admin $(ADMIN_KEY) \
+	--token CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
+
+contract-add-car:
+	stellar contract invoke \
+	--id rent_a_car-contract \
+  	--source admin \
+  	--network testnet \
+  	-- \
+  	add_car \
+  	--owner $(OWNER_KEY) \
+  	--price_per_day 1500
+
+contract-get-car-status:
+	stellar contract invoke \
+	--id rent_a_car-contract \
+	--source admin \
+	--network testnet \
+	-- \
+	get_car_status \
+	--owner $(OWNER_KEY)
+
+contract-rental:
+	stellar contract invoke \
+		--id rent_a_car-contract \
+		--source user \
+		--network testnet \
+		-- \
+		rental \
+		--renter $(USER_KEY) \
+		--owner $(OWNER_KEY) \
+		--total_days_to_rent 3 \
+		--amount 4500
+
+contract-remove-car:
+	stellar contract invoke \
+		--id rent_a_car-contract \
+		--source admin \
+		--network testnet \
+		-- \
+		remove_car \
+		--owner $(OWNER_KEY)
