@@ -83,3 +83,13 @@ contract-remove-car:
 		-- \
 		remove_car \
 		--owner $(OWNER_KEY)
+
+contract-payout-owner:
+	stellar contract invoke \
+		--id rent_a_car-contract \
+		--source owner \
+		--network testnet \
+		-- \
+		payout_owner \
+		--owner $(OWNER_KEY) \
+		--amount 4500
