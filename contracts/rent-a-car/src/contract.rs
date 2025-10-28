@@ -1,4 +1,5 @@
 use crate::{
+    events,
     interfaces::contract::RentACarContractTrait,
     methods::token::token::token_transfer,
     storage::{
@@ -30,6 +31,8 @@ impl RentACarContractTrait for RentACarContract {
         write_admin(env, &admin);
         write_token(env, &token);
 
+        events::contract::contract_initialized(env, admin, token);
+
         Ok(())
     }
 
@@ -38,6 +41,9 @@ impl RentACarContractTrait for RentACarContract {
     }
 
     fn add_car(env: &Env, owner: Address, price_per_day: i128) -> Result<(), Error> {
+        let admin = read_admin(env);
+        admin.require_auth();
+
         if price_per_day <= 0 {
             return Err(Error::AmountMustBePositive);
         }
@@ -53,6 +59,8 @@ impl RentACarContractTrait for RentACarContract {
         };
 
         write_car(env, &owner, &car);
+
+        events::add_car::car_added(env, owner, price_per_day);
         Ok(())
     }
 
@@ -113,6 +121,8 @@ impl RentACarContractTrait for RentACarContract {
         write_rental(env, &renter, &owner, &rental);
 
         token_transfer(&env, &renter, &env.current_contract_address(), &amount);
+
+        events::rental::rented(env, renter, owner, total_days_to_rent, amount);
         Ok(())
     }
 
@@ -146,15 +156,22 @@ impl RentACarContractTrait for RentACarContract {
         write_contract_balance(&env, &contract_balance);
 
         token_transfer(&env, &env.current_contract_address(), &owner, &amount);
+
+        events::payout_owner::payout_owner(env, owner, amount);
         Ok(())
     }
 
     fn remove_car(env: &Env, owner: Address) -> Result<(), Error> {
+        let admin = read_admin(env);
+        admin.require_auth();
+
         if !has_car(env, &owner) {
             return Err(Error::CarNotFound);
         }
 
         remove_car(env, &owner);
+
+        events::remove_car::car_removed(env, owner);
         Ok(())
     }
 }

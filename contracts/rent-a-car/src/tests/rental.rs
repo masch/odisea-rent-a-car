@@ -3,9 +3,9 @@ use crate::{
         car::read_car, contract_balance::read_contract_balance, rental::read_rental,
         types::car_status::CarStatus,
     },
-    tests::config::contract::ContractTest,
+    tests::config::{contract::ContractTest, utils::get_contract_events},
 };
-use soroban_sdk::{testutils::Address as _, Address};
+use soroban_sdk::{testutils::Address as _, vec, Address, IntoVal, Symbol};
 
 #[test]
 pub fn test_rental_car_successfully() {
@@ -36,6 +36,7 @@ pub fn test_rental_car_successfully() {
     assert_eq!(initial_contract_balance, 0);
 
     contract.rental(&renter, &owner, &total_days, &amount);
+    let contract_events = get_contract_events(&env, &contract.address);
 
     let updated_contract_balance =
         env.as_contract(&contract.address, || read_contract_balance(&env));
@@ -48,6 +49,22 @@ pub fn test_rental_car_successfully() {
     let rental = env.as_contract(&contract.address, || read_rental(&env, &renter, &owner));
     assert_eq!(rental.total_days_to_rent, total_days);
     assert_eq!(rental.amount, amount);
+    assert_eq!(
+        contract_events,
+        vec![
+            &env,
+            (
+                contract.address.clone(),
+                vec![
+                    &env,
+                    *Symbol::new(&env, "rented").as_val(),
+                    renter.clone().into_val(&env),
+                    owner.clone().into_val(&env),
+                ],
+                (total_days, amount).into_val(&env)
+            )
+        ]
+    );
 }
 
 //TODO: Add test validation

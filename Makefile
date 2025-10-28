@@ -14,7 +14,7 @@ contract-test:
 	cargo test
 
 contract-build:
-	cargo clean && cargo build --target wasm32v1-none --release && stellar contract optimize --wasm target/wasm32v1-none/release/rent_a_car.wasm
+	rm -rf target/wasm32v1-none/ && cargo build --target wasm32v1-none --release && stellar contract optimize --wasm target/wasm32v1-none/release/rent_a_car.wasm
 
 contract-admin-address:
 	@echo $(ADMIN_KEY)
