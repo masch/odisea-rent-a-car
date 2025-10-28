@@ -39,3 +39,5 @@ pub fn test_payout_owner_successfully() {
     let contract_balance = env.as_contract(&contract.address, || read_contract_balance(&env));
     assert_eq!(contract_balance, 0);
 }
+
+//TODO: Add test validation

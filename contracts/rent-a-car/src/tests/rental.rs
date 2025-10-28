@@ -49,3 +49,5 @@ pub fn test_rental_car_successfully() {
     assert_eq!(rental.total_days_to_rent, total_days);
     assert_eq!(rental.amount, amount);
 }
+
+//TODO: Add test validation
