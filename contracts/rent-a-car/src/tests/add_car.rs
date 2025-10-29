@@ -32,7 +32,9 @@ pub fn test_add_car_successfully() {
         .add_car(&owner, &price_per_day);
     let contract_events = get_contract_events(&env, &contract.address);
 
-    let stored_car = env.as_contract(&contract.address, || read_car(&env, &owner));
+    let stored_car = env
+        .as_contract(&contract.address, || read_car(&env, &owner))
+        .unwrap(); // TODO handle error properly
 
     assert_eq!(stored_car.price_per_day, price_per_day);
     assert_eq!(stored_car.car_status, CarStatus::Available);

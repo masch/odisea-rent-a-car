@@ -42,11 +42,15 @@ pub fn test_rental_car_successfully() {
         env.as_contract(&contract.address, || read_contract_balance(&env));
     assert_eq!(updated_contract_balance, amount);
 
-    let car = env.as_contract(&contract.address, || read_car(&env, &owner));
+    let car = env
+        .as_contract(&contract.address, || read_car(&env, &owner))
+        .unwrap(); // TODO handle error properly
     assert_eq!(car.car_status, CarStatus::Rented);
     assert_eq!(car.available_to_withdraw, amount);
 
-    let rental = env.as_contract(&contract.address, || read_rental(&env, &renter, &owner));
+    let rental = env
+        .as_contract(&contract.address, || read_rental(&env, &renter, &owner))
+        .unwrap(); // TODO handle error properly
     assert_eq!(rental.total_days_to_rent, total_days);
     assert_eq!(rental.amount, amount);
     assert_eq!(

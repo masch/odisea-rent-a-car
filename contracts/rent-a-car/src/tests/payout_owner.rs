@@ -34,7 +34,9 @@ pub fn test_payout_owner_successfully() {
     contract.payout_owner(&owner, &amount);
     let contract_events = get_contract_events(&env, &contract.address);
 
-    let car = env.as_contract(&contract.address, || read_car(&env, &owner));
+    let car = env
+        .as_contract(&contract.address, || read_car(&env, &owner))
+        .unwrap(); // TODO handle error properly
     assert_eq!(car.available_to_withdraw, 0);
 
     let contract_balance = env.as_contract(&contract.address, || read_contract_balance(&env));
