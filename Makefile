@@ -1,6 +1,7 @@
 ADMIN_KEY := $(shell stellar keys address admin)
 OWNER_KEY := $(shell stellar keys address owner)
 USER_KEY := $(shell stellar keys address user)
+PUBLIC_ADMIN_KEY := GDPDXDW4ZRUSVZO7PDGFEC5UWGXICNPAXXTFQUKTMOINEQRHHOUXWA43
 
 .PHONY: run build test
 
@@ -41,7 +42,7 @@ contract-deploy:
 	--network testnet \
 	--alias rent_a_car-contract \
 	-- \
-	--admin $(ADMIN_KEY) \
+	--admin $(PUBLIC_ADMIN_KEY) \
 	--token CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 
 contract-add-car:

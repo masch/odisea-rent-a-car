@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useStellarAccounts } from "../providers/StellarAccountProvider";
 import Modal from "./Modal";
-import { stellarService } from "../services/stellar.services";
+import { stellarService } from "../services/stellar.service";
 
 interface IAccount {
   publicKey: string;

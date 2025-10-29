@@ -2,7 +2,7 @@ import { useState } from "react";
 import { IAccount } from "../interfaces/account";
 import { useStellarAccounts } from "../providers/StellarAccountProvider";
 import Modal from "./Modal";
-import { stellarService } from "../services/stellar.services";
+import { stellarService } from "../services/stellar.service";
 
 interface ICreateModalProps {
   closeModal: () => void;
@@ -60,7 +60,7 @@ function CreateAssetModal({
         await onPaymentSuccess();
       }
 
-      setHashId(response.hash);
+      setHashId(response || "");
 
       setSourceAccount(null);
       setDestinationAccount(null);

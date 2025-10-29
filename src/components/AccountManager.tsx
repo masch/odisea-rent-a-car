@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useStellarAccounts } from "../providers/StellarAccountProvider";
 import { saveAccountToStorage } from "../utils/local-storage";
-import { stellarService } from "../services/stellar.services";
+import { stellarService } from "../services/stellar.service";
 import AccountCard from "./AccountCard";
 import { AccountBalance, IAccount } from "../interfaces/account";
 import useModal from "../hooks/useModal";

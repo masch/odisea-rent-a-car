@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AccountBalance, IAccount } from "../interfaces/account";
 import { useStellarAccounts } from "../providers/StellarAccountProvider";
-import { stellarService } from "../services/stellar.services";
+import { stellarService } from "../services/stellar.service";
 import Modal from "./Modal";
 
 interface PaymentModalProps {

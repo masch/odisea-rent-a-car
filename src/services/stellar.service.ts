@@ -1,40 +1,85 @@
-import { AccountBalance } from "../interfaces/account";
-import { IAccountBalanceResponse } from "../interfaces/balance";
-import { ICreateClaimableBalanceResponse } from "../interfaces/claimable-balance";
-import { IKeypair } from "../interfaces/keypair";
-import {
-  STELLAR_NETWORK,
-  HORIZON_URL,
-  STELLAR_FRIENDBOT_URL,
-  HORIZON_NETWORK_PASSPHRASE,
-} from "../utils/constants";
 import {
   Asset,
   BadResponseError,
   BASE_FEE,
   Claimant,
+  contract,
   Horizon,
   Keypair,
   Operation,
-  Transaction,
   TransactionBuilder,
   xdr,
 } from "@stellar/stellar-sdk";
+import {
+  CONTRACT_ADDRESS,
+  HORIZON_NETWORK_PASSPHRASE,
+  HORIZON_URL,
+  SOROBAN_RPC_URL,
+  STELLAR_FRIENDBOT_URL,
+  STELLAR_NETWORK,
+} from "../utils/constants";
+import { IKeypair } from "../interfaces/keypair";
+import { IAccountBalanceResponse } from "../interfaces/balance";
+import { AccountBalance } from "../interfaces/account";
+import { ICreateClaimableBalanceResponse } from "../interfaces/claimable-balance";
 
 export class StellarService {
   private network: string;
   private horizonUrl: string;
+  private rpcUrl: string;
   private server: Horizon.Server;
+  //private rpcServer: rpc.Server;
   private friendBotUrl: string;
   private networkPassphrase: string;
+  private contractAddress: string;
 
   constructor() {
     this.network = STELLAR_NETWORK as string;
     this.horizonUrl = HORIZON_URL as string;
+    this.rpcUrl = SOROBAN_RPC_URL as string;
     this.friendBotUrl = STELLAR_FRIENDBOT_URL as string;
     this.networkPassphrase = HORIZON_NETWORK_PASSPHRASE as string;
+    this.contractAddress = CONTRACT_ADDRESS as string;
 
-    this.server = new Horizon.Server(this.horizonUrl, { allowHttp: true });
+    this.server = new Horizon.Server(this.horizonUrl, {
+      allowHttp: true,
+    });
+    // this.rpcServer = new rpc.Server(this.rpcUrl, {
+    //   allowHttp: true,
+    // });
+  }
+
+  async buildClient<T = unknown>(publicKey: string): Promise<T> {
+    const client = await contract.Client.from({
+      contractId: this.contractAddress,
+      rpcUrl: this.rpcUrl,
+      networkPassphrase: this.networkPassphrase,
+      publicKey,
+    });
+
+    return client as T;
+  }
+
+  async submitTransaction(xdr: string): Promise<string | undefined> {
+    try {
+      const transaction = TransactionBuilder.fromXDR(
+        xdr,
+        this.networkPassphrase,
+      );
+      const result = await this.server.submitTransaction(transaction);
+
+      return result.hash;
+    } catch (error) {
+      this._handleTransactionError(error);
+      throw error; // Re-throw the error after logging
+    }
+  }
+
+  environment(): { rpc: string; networkPassphrase: string } {
+    return {
+      rpc: this.rpcUrl,
+      networkPassphrase: this.networkPassphrase,
+    };
   }
 
   createAccount(): IKeypair {
@@ -348,16 +393,16 @@ export class StellarService {
     }
   }
 
-  private async submitTransaction(
-    transaction: Transaction,
-  ): Promise<Horizon.HorizonApi.SubmitTransactionResponse> {
-    try {
-      return await this.server.submitTransaction(transaction);
-    } catch (error) {
-      this._handleTransactionError(error);
-      throw error; // Re-throw the error after logging
-    }
-  }
+  // private async submitTransaction(
+  //   transaction: Transaction,
+  // ): Promise<Horizon.HorizonApi.SubmitTransactionResponse> {
+  //   try {
+  //     return await this.server.submitTransaction(transaction);
+  //   } catch (error) {
+  //     this._handleTransactionError(error);
+  //     throw error; // Re-throw the error after logging
+  //   }
+  // }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _handleTransactionError(error: any) {
