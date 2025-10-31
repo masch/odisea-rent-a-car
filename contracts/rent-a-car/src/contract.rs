@@ -15,8 +15,13 @@ pub struct RentACarContract;
 
 #[contractimpl]
 impl RentACarContractTrait for RentACarContract {
-    fn __constructor(env: &Env, admin: Address, token: Address) -> Result<(), Error> {
-        initialize(env, &admin, &token)
+    fn __constructor(
+        env: &Env,
+        admin: Address,
+        token: Address,
+        admin_fee: i128,
+    ) -> Result<(), Error> {
+        initialize(env, &admin, &token, &admin_fee)
     }
 
     fn add_car(env: &Env, owner: Address, price_per_day: i128) -> Result<(), Error> {

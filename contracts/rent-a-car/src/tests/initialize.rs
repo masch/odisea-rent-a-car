@@ -11,7 +11,7 @@ pub fn test_initialize() {
         contract,
         admin,
         token,
-        ..
+        admin_fee,
     } = ContractTest::setup();
     let contract_events = get_contract_events(&env, &contract.address);
 
@@ -22,7 +22,7 @@ pub fn test_initialize() {
             (
                 contract.address.clone(),
                 vec![&env, *Symbol::new(&env, "contract_initialized").as_val(),],
-                (admin.clone(), token.0.address.clone()).into_val(&env)
+                (admin.clone(), token.0.address.clone(), admin_fee).into_val(&env)
             )
         ]
     );
