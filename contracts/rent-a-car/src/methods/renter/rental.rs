@@ -79,7 +79,7 @@ pub fn rental(
     write_admin_balance(env, &admin_balance);
 
     // 4. Events
-    events::rental::rented(env, renter, owner, total_days_to_rent, amount, admin_fee);
+    events::rental::rented(env, renter, owner, total_days_to_rent, amount);
 
     // 5. Return
     Ok(())

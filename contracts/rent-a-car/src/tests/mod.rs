@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 pub mod add_car;
+pub mod admin;
 pub mod config;
 pub mod get_car_status;
 pub mod initialize;
