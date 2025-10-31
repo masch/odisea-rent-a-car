@@ -3,13 +3,18 @@ use soroban_sdk::{Address, Env};
 use crate::{
     events,
     storage::{
-        admin::{has_admin, write_admin},
+        admin::{has_admin, write_admin, write_admin_fee},
         token::write_token,
         types::error::Error,
     },
 };
 
-pub fn initialize(env: &Env, admin: &Address, token: &Address) -> Result<(), Error> {
+pub fn initialize(
+    env: &Env,
+    admin: &Address,
+    token: &Address,
+    admin_fee: &i128,
+) -> Result<(), Error> {
     if admin == token {
         return Err(Error::AdminTokenConflict);
     }
@@ -20,8 +25,9 @@ pub fn initialize(env: &Env, admin: &Address, token: &Address) -> Result<(), Err
 
     write_admin(env, &admin);
     write_token(env, &token);
+    write_admin_fee(env, &admin_fee);
 
-    events::contract::contract_initialized(env, admin, token);
+    events::contract::contract_initialized(env, admin, token, admin_fee);
 
     Ok(())
 }

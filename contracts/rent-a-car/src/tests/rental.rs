@@ -1,7 +1,7 @@
 use crate::{
     storage::{
-        car::read_car, contract_balance::read_contract_balance, rental::read_rental,
-        types::car_status::CarStatus,
+        admin::read_admin_balance, car::read_car, contract_balance::read_contract_balance,
+        rental::read_rental, types::car_status::CarStatus,
     },
     tests::config::{contract::ContractTest, utils::get_contract_events},
 };
@@ -13,6 +13,7 @@ pub fn test_rental_car_successfully() {
         env,
         contract,
         token,
+        admin_fee,
         ..
     } = ContractTest::setup();
 
@@ -42,6 +43,9 @@ pub fn test_rental_car_successfully() {
         env.as_contract(&contract.address, || read_contract_balance(&env));
     assert_eq!(updated_contract_balance, amount);
 
+    let updated_admin_balance = env.as_contract(&contract.address, || read_admin_balance(&env));
+    assert_eq!(updated_admin_balance, admin_fee);
+
     let car = env
         .as_contract(&contract.address, || read_car(&env, &owner))
         .unwrap(); // TODO handle error properly
@@ -65,7 +69,7 @@ pub fn test_rental_car_successfully() {
                     renter.clone().into_val(&env),
                     owner.clone().into_val(&env),
                 ],
-                (total_days, amount).into_val(&env)
+                (total_days, amount, admin_fee).into_val(&env)
             )
         ]
     );

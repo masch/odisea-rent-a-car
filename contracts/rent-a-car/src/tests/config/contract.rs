@@ -7,6 +7,7 @@ pub struct ContractTest<'a> {
     pub contract: RentACarContractClient<'a>,
     pub admin: Address,
     pub token: (token::Client<'a>, token::StellarAssetClient<'a>, Address),
+    pub admin_fee: i128,
 }
 
 impl<'a> ContractTest<'a> {
@@ -15,10 +16,14 @@ impl<'a> ContractTest<'a> {
 
         let admin = Address::generate(&env);
         let token_issuer = Address::generate(&env);
+        let admin_fee: i128 = 666;
 
         let (token_client, token_admin) = create_token_contract(&env, &token_issuer);
 
-        let contract_id = env.register(RentACarContract, (&admin, &token_client.address));
+        let contract_id = env.register(
+            RentACarContract,
+            (&admin, &token_client.address, &admin_fee),
+        );
         let contract = RentACarContractClient::new(&env, &contract_id);
 
         ContractTest {
@@ -26,6 +31,7 @@ impl<'a> ContractTest<'a> {
             contract,
             admin,
             token: (token_client, token_admin, token_issuer),
+            admin_fee,
         }
     }
 }
