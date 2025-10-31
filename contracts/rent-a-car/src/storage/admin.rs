@@ -25,24 +25,24 @@ pub(crate) fn write_admin(env: &Env, admin: &Address) {
     env.storage().instance().set(&key, admin);
 }
 
-pub(crate) fn read_admin_fee(env: &Env) -> u128 {
+pub(crate) fn read_admin_fee(env: &Env) -> i128 {
     let key = DataKey::AdminFee;
 
     env.storage().instance().get(&key).unwrap_or(0)
 }
 
-pub(crate) fn write_admin_fee(env: &Env, fee: &u128) {
+pub(crate) fn write_admin_fee(env: &Env, fee: &i128) {
     let key = DataKey::AdminFee;
 
     env.storage().instance().set(&key, fee);
 }
 
-pub(crate) fn read_admin_balance(env: &Env) -> u128 {
+pub(crate) fn read_admin_balance(env: &Env) -> i128 {
     let key = DataKey::AdminBalance;
 
     env.storage().instance().get(&key).unwrap_or(0)
 }
-pub(crate) fn write_admin_balance(env: &Env, amount: &u128) {
+pub(crate) fn write_admin_balance(env: &Env, amount: &i128) {
     let key = DataKey::AdminBalance;
 
     env.storage().instance().set(&key, amount);

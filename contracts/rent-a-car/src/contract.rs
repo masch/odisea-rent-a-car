@@ -19,7 +19,7 @@ impl RentACarContractTrait for RentACarContract {
         initialize(env, &admin, &token)
     }
 
-    fn set_admin_fee(env: &Env, admin_fee: u128) -> Result<(), Error> {
+    fn set_admin_fee(env: &Env, admin_fee: i128) -> Result<(), Error> {
         set_admin_fee(env, &admin_fee)
     }
 

@@ -7,7 +7,7 @@ use crate::{
 };
 use soroban_sdk::{testutils::Address as _, vec, Address, IntoVal, Symbol};
 
-fn test_rental_car(admin_fee: u128) {
+fn test_rental_car(admin_fee: i128) {
     let ContractTest {
         env,
         contract,
