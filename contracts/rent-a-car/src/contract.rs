@@ -1,7 +1,7 @@
 use crate::{
     interfaces::contract::RentACarContractTrait,
     methods::{
-        admin::{add_car::add_car, remove_car::remove_car},
+        admin::{add_car::add_car, admin_fee::set_admin_fee, remove_car::remove_car},
         owner::payout::payout,
         public::{get_car_status::get_car_status, initialize::initialize},
         renter::rental::rental,
@@ -15,13 +15,12 @@ pub struct RentACarContract;
 
 #[contractimpl]
 impl RentACarContractTrait for RentACarContract {
-    fn __constructor(
-        env: &Env,
-        admin: Address,
-        token: Address,
-        admin_fee: i128,
-    ) -> Result<(), Error> {
-        initialize(env, &admin, &token, &admin_fee)
+    fn __constructor(env: &Env, admin: Address, token: Address) -> Result<(), Error> {
+        initialize(env, &admin, &token)
+    }
+
+    fn set_admin_fee(env: &Env, admin_fee: i128) -> Result<(), Error> {
+        set_admin_fee(env, &admin_fee)
     }
 
     fn add_car(env: &Env, owner: Address, price_per_day: i128) -> Result<(), Error> {

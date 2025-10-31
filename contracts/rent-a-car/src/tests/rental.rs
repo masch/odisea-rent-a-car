@@ -7,13 +7,11 @@ use crate::{
 };
 use soroban_sdk::{testutils::Address as _, vec, Address, IntoVal, Symbol};
 
-#[test]
-pub fn test_rental_car_successfully() {
+fn test_rental_car(admin_fee: i128) {
     let ContractTest {
         env,
         contract,
         token,
-        admin_fee,
         ..
     } = ContractTest::setup();
 
@@ -30,6 +28,9 @@ pub fn test_rental_car_successfully() {
     let amount_mint = 10_000_i128;
     token_admin.mint(&renter, &amount_mint);
 
+    if admin_fee > 0 {
+        contract.set_admin_fee(&admin_fee);
+    }
     contract.add_car(&owner, &price_per_day);
 
     let initial_contract_balance =
@@ -69,10 +70,22 @@ pub fn test_rental_car_successfully() {
                     renter.clone().into_val(&env),
                     owner.clone().into_val(&env),
                 ],
-                (total_days, amount, admin_fee).into_val(&env)
+                (total_days, amount).into_val(&env)
             )
         ]
     );
 }
+
+#[test]
+fn test_rental_car_successfully_without_admin_fee() {
+    test_rental_car(0);
+}
+
+#[test]
+fn test_rental_car_successfully_with_admin_fee() {
+    test_rental_car(666);
+}
+
+//TODO: Add test validation
 
 //TODO: Add test validation
