@@ -3,7 +3,7 @@ use crate::{
     methods::{
         admin::{
             add_car::add_car,
-            admin_fee::{set_admin_fee, withdraw_admin_fee},
+            admin_fee::{get_admin_fee, set_admin_fee, withdraw_admin_fee},
             remove_car::remove_car,
         },
         owner::payout::payout,
@@ -21,6 +21,10 @@ pub struct RentACarContract;
 impl RentACarContractTrait for RentACarContract {
     fn __constructor(env: &Env, admin: Address, token: Address) -> Result<(), Error> {
         initialize(env, &admin, &token)
+    }
+
+    fn get_admin_fee(env: &Env) -> i128 {
+        get_admin_fee(env)
     }
 
     fn set_admin_fee(env: &Env, admin_fee: i128) -> Result<(), Error> {
