@@ -2,7 +2,7 @@ use crate::{
     storage::admin::read_admin_balance,
     tests::{
         config::{contract::ContractTest, utils::get_contract_events},
-        utils::{add_car, set_admin_fee},
+        utils::{add_car, mint_token, rental, set_admin_fee},
     },
 };
 use soroban_sdk::{
@@ -37,8 +37,8 @@ pub fn test_withdraw_admin_fee_with_a_admin_user_with_a_rental_with_admin_fee_su
         &env,
         &contract,
         &token.0.address,
-        owner,
-        renter,
+        &owner,
+        &renter,
         total_days,
         amount,
     );
@@ -93,8 +93,8 @@ pub fn test_withdraw_admin_fee_with_a_admin_user_with_a_rental_without_admin_fee
         &env,
         &contract,
         &token.0.address,
-        owner,
-        renter,
+        &owner,
+        &renter,
         total_days,
         amount,
     );
@@ -155,51 +155,4 @@ fn withdraw_admin_fee(
             },
         }])
         .withdraw_admin_fee();
-}
-
-fn rental(
-    env: &soroban_sdk::Env,
-    contract: &crate::contract::RentACarContractClient<'_>,
-    token_address: &Address,
-    owner: Address,
-    renter: Address,
-    total_days: u32,
-    amount: i128,
-) {
-    contract
-        .mock_auths(&[MockAuth {
-            address: &renter,
-            invoke: &MockAuthInvoke {
-                contract: &contract.address.clone(),
-                fn_name: "rental",
-                args: (renter.clone(), owner.clone(), total_days, amount).into_val(env),
-                sub_invokes: &[MockAuthInvoke {
-                    contract: &token_address,
-                    fn_name: "transfer",
-                    args: (renter.clone(), contract.address.clone(), amount).into_val(env),
-                    sub_invokes: &[],
-                }],
-            },
-        }])
-        .rental(&renter, &owner, &total_days, &amount);
-}
-
-fn mint_token(
-    env: &soroban_sdk::Env,
-    token_admin: soroban_sdk::token::StellarAssetClient<'_>,
-    token_issuer: Address,
-    renter: &Address,
-) {
-    let amount_mint = 10_000_i128;
-    token_admin
-        .mock_auths(&[MockAuth {
-            address: &token_issuer,
-            invoke: &MockAuthInvoke {
-                contract: &token_admin.address,
-                fn_name: "mint",
-                args: (renter.clone(), amount_mint).into_val(env),
-                sub_invokes: &[],
-            },
-        }])
-        .mint(renter, &amount_mint);
 }

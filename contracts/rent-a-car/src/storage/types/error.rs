@@ -21,4 +21,6 @@ pub enum Error {
     MathOverflow = 14,
     MathUnderflow = 15,
     AdminBalanceNotAvailable = 16,
+    CarNotAvailable = 17,
+    CarNotRented = 18,
 }
