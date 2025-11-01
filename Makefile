@@ -1,5 +1,6 @@
 ADMIN_KEY := $(shell stellar keys address admin)
 OWNER_KEY := $(shell stellar keys address owner)
+PUBLIC_OWNER_KEY := $(shell stellar keys address public-owner)
 USER_KEY := $(shell stellar keys address user)
 PUBLIC_ADMIN_KEY := GDPDXDW4ZRUSVZO7PDGFEC5UWGXICNPAXXTFQUKTMOINEQRHHOUXWA43
 
@@ -20,8 +21,17 @@ stellar-owner-key:
 stellar-user-key:
 	@echo $(USER_KEY)
 
-stellar-add-public-admin:
+stellar-public-admin-add:
 	stellar keys add public-admin --secret-key
+
+stellar-public-admin-get-secret:
+	stellar keys secret public-admin
+
+stellar-public-owner-add:
+	stellar keys add public-owner --secret-key
+
+stellar-public-owner-get-secret:
+	stellar keys secret public-owner
 
 contract-test:
 	cargo test
@@ -34,6 +44,9 @@ contract-admin-address:
 
 contract-owner-address:
 	@echo $(OWNER_KEY)
+
+stellar-public-owner-get-address:
+	@echo $(PUBLIC_OWNER_KEY)
 
 contract-user-address:
 	@echo $(USER_KEY)
@@ -57,6 +70,8 @@ contract-deploy:
 	--admin $(PUBLIC_ADMIN_KEY) \
 	--token CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 
+contract-build-and-deploy: contract-build contract-deploy
+
 contract-admin-fee-set:
 	stellar contract invoke \
 	--id rent_a_car-contract \
@@ -64,7 +79,7 @@ contract-admin-fee-set:
   	--network testnet \
   	-- \
   	set_admin_fee \
-  	--admin_fee 13
+  	--admin_fee 130000000
 
 contract-add-car:
 	stellar contract invoke \

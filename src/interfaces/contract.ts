@@ -39,6 +39,12 @@ export interface IRentACarContract extends IBaseContractClient {
 
   get_admin_fee: () => Promise<{ result: xdr.ScVal }>;
 
+  get_car_available_to_withdraw: ({
+    owner,
+  }: {
+    owner: string;
+  }) => Promise<{ result: xdr.ScVal }>;
+
   remove_car: ({ owner }: { owner: string }) => Promise<this>;
 
   payout_owner: ({
@@ -47,5 +53,13 @@ export interface IRentACarContract extends IBaseContractClient {
   }: {
     owner: string;
     amount: number;
+  }) => Promise<this>;
+
+  return_car: ({
+    renter,
+    owner,
+  }: {
+    renter: string;
+    owner: string;
   }) => Promise<this>;
 }

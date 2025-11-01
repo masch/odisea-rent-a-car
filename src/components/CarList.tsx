@@ -9,7 +9,6 @@ import { useStellarAccounts } from "../providers/StellarAccountProvider";
 import { stellarService } from "../services/stellar.service";
 import { walletService } from "../services/wallet.service";
 import { shortenAddress } from "../utils/shorten-address";
-import { ONE_XLM_IN_STROOPS } from "../utils/xlm-in-stroops";
 import { RentCarModal } from "./RentCarForm";
 
 interface CarsListProps {
@@ -38,15 +37,25 @@ export const CarsList = ({ cars }: CarsListProps) => {
     setHashId(txHash as string);
   };
 
-  const handlePayout = async (owner: string, amount: number) => {
+  const handlePayout = async (owner: string) => {
     const contractClient =
       await stellarService.buildClient<IRentACarContract>(walletAddress);
+
+    const { result: available_to_withdraw } =
+      await contractClient.get_car_available_to_withdraw({
+        owner,
+      });
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const amount = Number(available_to_withdraw.value);
 
     const result = await contractClient.payout_owner({ owner, amount });
     const xdr = result.toXDR();
 
     const signedTx = await walletService.signTransaction(xdr);
     const txHash = await stellarService.submitTransaction(signedTx.signedTxXdr);
+
+    alert(`The ${amount} was sent to ${owner}`);
 
     setHashId(txHash as string);
   };
@@ -56,8 +65,23 @@ export const CarsList = ({ cars }: CarsListProps) => {
     openModal();
   };
 
-  const handleReturn = (renter: string, owner: string) => {
-    alert(JSON.stringify({ info: "TODO", renter, owner }));
+  const handleReturn = async (renter: string, owner: string) => {
+    const contractClient =
+      await stellarService.buildClient<IRentACarContract>(walletAddress);
+
+    const result = await contractClient.return_car({ renter, owner });
+    const xdr = result.toXDR();
+
+    const signedTx = await walletService.signTransaction(xdr);
+    const txHash = await stellarService.submitTransaction(signedTx.signedTxXdr);
+
+    setCars((prev) =>
+      prev.map((c) =>
+        c.ownerAddress === owner ? { ...c, status: CarStatus.AVAILABLE } : c,
+      ),
+    );
+
+    setHashId(txHash as string);
   };
 
   const handleConfirmRentCar = async (rentCar: RentCar) => {
@@ -87,7 +111,7 @@ export const CarsList = ({ cars }: CarsListProps) => {
     setHashId(txHash as string);
   };
 
-  const getStatusStyle = (status: CarStatus) => {
+  const getStatusStyle = (status: CarStatus): string => {
     switch (status) {
       case CarStatus.AVAILABLE:
         return "px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800";
@@ -101,7 +125,7 @@ export const CarsList = ({ cars }: CarsListProps) => {
   };
 
   const renderActionButton = (car: ICar) => {
-    if (selectedRole === UserRole.ADMIN) {
+    if (selectedRole === UserRole.ADMIN && car.status != CarStatus.RENTED) {
       return (
         <button
           onClick={() => void handleDelete(car.ownerAddress)}
@@ -113,10 +137,9 @@ export const CarsList = ({ cars }: CarsListProps) => {
     }
 
     if (selectedRole === UserRole.OWNER && car.status === CarStatus.AVAILABLE) {
-      const amount = car.pricePerDay * 3 * ONE_XLM_IN_STROOPS;
       return (
         <button
-          onClick={() => void handlePayout(car.ownerAddress, amount)}
+          onClick={() => void handlePayout(car.ownerAddress)}
           className="px-3 py-1 bg-green-600 text-white rounded font-semibold hover:bg-green-700 transition-colors cursor-pointer"
         >
           Withdraw

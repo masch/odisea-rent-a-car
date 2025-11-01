@@ -2,9 +2,7 @@ use crate::{
     events,
     methods::token::token::token_transfer,
     storage::{
-        admin::{
-            read_admin, read_admin_balance, read_admin_fee, write_admin_balance, write_admin_fee,
-        },
+        admin::{read_admin, read_admin_balance, write_admin_balance, write_admin_fee},
         contract_balance::read_contract_balance,
         types::error::Error,
     },
@@ -23,10 +21,6 @@ pub fn set_admin_fee(env: &Env, amount: &i128) -> Result<(), Error> {
     events::admin_free::set_admin_fee(env, &admin, amount);
 
     Ok(())
-}
-
-pub fn get_admin_fee(env: &Env) -> i128 {
-    read_admin_fee(env)
 }
 
 pub fn withdraw_admin_fee(env: &Env) -> Result<(), Error> {

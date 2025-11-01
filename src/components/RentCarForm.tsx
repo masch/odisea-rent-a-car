@@ -40,7 +40,8 @@ export const RentCarModal = ({
       const contractClient =
         await stellarService.buildClient<IRentACarContract>(walletAddress);
       const { result } = await contractClient.get_admin_fee();
-      setAdminFee(result);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      setAdminFee(result.value() / BigInt(ONE_XLM_IN_STROOPS));
 
       setIsLoading(false);
     };
