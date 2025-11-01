@@ -1,11 +1,11 @@
 use crate::{
     storage::admin::read_admin_fee,
-    tests::config::{contract::ContractTest, utils::get_contract_events},
+    tests::{
+        config::{contract::ContractTest, utils::get_contract_events},
+        utils::set_admin_fee,
+    },
 };
-use soroban_sdk::{
-    testutils::{MockAuth, MockAuthInvoke},
-    vec, IntoVal, Symbol,
-};
+use soroban_sdk::{vec, IntoVal, Symbol};
 
 #[test]
 pub fn test_set_admin_fee_with_admin_user_successfully() {
@@ -18,17 +18,7 @@ pub fn test_set_admin_fee_with_admin_user_successfully() {
 
     let admin_fee = 666_i128;
 
-    contract
-        .mock_auths(&[MockAuth {
-            address: &admin,
-            invoke: &MockAuthInvoke {
-                contract: &contract.address.clone(),
-                fn_name: "set_admin_fee",
-                args: (admin_fee,).into_val(&env),
-                sub_invokes: &[],
-            },
-        }])
-        .set_admin_fee(&admin_fee);
+    set_admin_fee(&env, &contract, &admin, admin_fee);
 
     let contract_events = get_contract_events(&env, &contract.address);
 
@@ -79,17 +69,8 @@ pub fn test_set_negative_admin_fee_fails() {
 
     let negative_admin_fee = -1_i128;
 
-    contract
-        .mock_auths(&[MockAuth {
-            address: &admin,
-            invoke: &MockAuthInvoke {
-                contract: &contract.address.clone(),
-                fn_name: "set_admin_fee",
-                args: (negative_admin_fee,).into_val(&env),
-                sub_invokes: &[],
-            },
-        }])
-        .set_admin_fee(&negative_admin_fee);
+    set_admin_fee(&env, &contract, &admin, negative_admin_fee);
+
     let contract_events = get_contract_events(&env, &contract.address);
 
     let contract_admin_fee = env.as_contract(&contract.address, || read_admin_fee(&env));

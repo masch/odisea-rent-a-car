@@ -1,11 +1,11 @@
 use crate::{
     storage::{car::read_car, types::car_status::CarStatus},
-    tests::config::{contract::ContractTest, utils::get_contract_events},
+    tests::{
+        config::{contract::ContractTest, utils::get_contract_events},
+        utils::add_car,
+    },
 };
-use soroban_sdk::{
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
-    vec, Address, IntoVal, Symbol,
-};
+use soroban_sdk::{testutils::Address as _, vec, Address, IntoVal, Symbol};
 
 #[test]
 pub fn test_add_car_successfully() {
@@ -19,17 +19,8 @@ pub fn test_add_car_successfully() {
     let owner = Address::generate(&env);
     let price_per_day = 1500_i128;
 
-    contract
-        .mock_auths(&[MockAuth {
-            address: &admin,
-            invoke: &MockAuthInvoke {
-                contract: &contract.address.clone(),
-                fn_name: "add_car",
-                args: (owner.clone(), price_per_day).into_val(&env),
-                sub_invokes: &[],
-            },
-        }])
-        .add_car(&owner, &price_per_day);
+    add_car(&env, &contract, &admin, &owner, price_per_day);
+
     let contract_events = get_contract_events(&env, &contract.address);
 
     let stored_car = env
@@ -64,17 +55,7 @@ pub fn test_unauthorized_user_cannot_add_car() {
     let owner = Address::generate(&env);
     let price_per_day = 1500_i128;
 
-    contract
-        .mock_auths(&[MockAuth {
-            address: &fake_admin,
-            invoke: &MockAuthInvoke {
-                contract: &contract.address.clone(),
-                fn_name: "add_car",
-                args: (owner.clone(), price_per_day).into_val(&env),
-                sub_invokes: &[],
-            },
-        }])
-        .add_car(&owner, &price_per_day);
+    add_car(&env, &contract, &fake_admin, &owner, price_per_day);
 }
 
 #[test]

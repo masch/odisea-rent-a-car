@@ -20,4 +20,5 @@ pub enum Error {
     AdminNotFound = 13,
     MathOverflow = 14,
     MathUnderflow = 15,
+    AdminBalanceNotAvailable = 16,
 }
