@@ -3,11 +3,14 @@ use crate::{
     methods::{
         admin::{
             add_car::add_car,
-            admin_fee::{get_admin_fee, set_admin_fee, withdraw_admin_fee},
+            admin_fee::{set_admin_fee, withdraw_admin_fee},
             remove_car::remove_car,
         },
         owner::payout::payout,
-        public::{get_car_status::get_car_status, initialize::initialize},
+        public::{
+            get_admin_fee::get_admin_fee, get_car_available_to_widraw::get_car_available_to_widraw,
+            get_car_status::get_car_status, initialize::initialize,
+        },
         renter::{rental::rental, return_car::return_car},
     },
     storage::types::{car_status::CarStatus, error::Error},
@@ -25,6 +28,10 @@ impl RentACarContractTrait for RentACarContract {
 
     fn get_admin_fee(env: &Env) -> i128 {
         get_admin_fee(env)
+    }
+
+    fn get_car_available_to_withdraw(env: &Env, owner: Address) -> Result<i128, Error> {
+        get_car_available_to_widraw(env, &owner)
     }
 
     fn set_admin_fee(env: &Env, admin_fee: i128) -> Result<(), Error> {
