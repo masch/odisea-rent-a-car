@@ -11,6 +11,18 @@ init-local-stellar:
 run: 
 	pnpm run dev
 
+stellar-admin-key:
+	@echo $(ADMIN_KEY)
+
+stellar-owner-key:
+	@echo $(OWNER_KEY)
+
+stellar-user-key:
+	@echo $(USER_KEY)
+
+stellar-add-public-admin:
+	stellar keys add public-admin --secret-key
+
 contract-test:
 	cargo test
 
@@ -44,6 +56,15 @@ contract-deploy:
 	-- \
 	--admin $(PUBLIC_ADMIN_KEY) \
 	--token CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
+
+contract-admin-fee-set:
+	stellar contract invoke \
+	--id rent_a_car-contract \
+  	--source public-admin \
+  	--network testnet \
+  	-- \
+  	set_admin_fee \
+  	--admin_fee 13
 
 contract-add-car:
 	stellar contract invoke \

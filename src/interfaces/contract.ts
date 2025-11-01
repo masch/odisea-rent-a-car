@@ -1,6 +1,6 @@
+import { xdr } from "@stellar/stellar-sdk";
 import type { ClientOptions } from "@stellar/stellar-sdk/contract";
 import { CarStatus } from "./car-status";
-
 export interface IBaseContractClient {
   readonly options: ClientOptions;
   toXDR(): string;
@@ -36,6 +36,8 @@ export interface IRentACarContract extends IBaseContractClient {
     total_days_to_rent: number;
     amount: number;
   }) => Promise<this>;
+
+  get_admin_fee: () => Promise<{ result: xdr.ScVal }>;
 
   remove_car: ({ owner }: { owner: string }) => Promise<this>;
 

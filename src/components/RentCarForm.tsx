@@ -1,0 +1,217 @@
+import { useState, useEffect } from "react";
+import { RentCar } from "../interfaces/rent-car";
+import Modal from "./Modal";
+import { ICar } from "../interfaces/car";
+import { stellarService } from "../services/stellar.service";
+import { IRentACarContract } from "../interfaces/contract";
+import { useStellarAccounts } from "../providers/StellarAccountProvider";
+import { ONE_XLM_IN_STROOPS } from "../utils/xlm-in-stroops";
+
+interface RentCarFormProps {
+  car: ICar;
+  renter: string;
+  onRentCar: (formData: RentCar) => Promise<void>;
+  onCancel: () => void;
+}
+
+export const RentCarModal = ({
+  car,
+  renter,
+  onRentCar,
+  onCancel,
+}: RentCarFormProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { walletAddress } = useStellarAccounts();
+
+  const [adminFee, setAdminFee] = useState(0n);
+  const [formData, setFormData] = useState<RentCar>({
+    renterAddress: renter,
+    total_days_to_rent: 1,
+    ownerAddress: car.ownerAddress,
+    amount: 0,
+  });
+
+  const totalAmount =
+    BigInt(car.pricePerDay) * BigInt(formData.total_days_to_rent) + adminFee;
+
+  useEffect(() => {
+    const fetchAdminFee = async () => {
+      const contractClient =
+        await stellarService.buildClient<IRentACarContract>(walletAddress);
+      const { result } = await contractClient.get_admin_fee();
+      setAdminFee(result);
+
+      setIsLoading(false);
+    };
+    void fetchAdminFee();
+  }, [walletAddress]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : type === "number"
+            ? Number(value)
+            : value,
+    }));
+  };
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await onRentCar({
+        ...formData,
+        amount: Number(totalAmount.toString()) * ONE_XLM_IN_STROOPS,
+      });
+    } catch (error) {
+      console.error("Error renting car:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal title="Rent Car" closeModal={onCancel}>
+      <div className="bg-white rounded-lg px-8">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          <div>
+            <label
+              htmlFor="renter"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Renter
+            </label>
+            <input
+              id="renter"
+              name="renter"
+              type="text"
+              disabled={true}
+              value={formData.renterAddress}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="owner"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Owner
+            </label>
+            <input
+              id="owner"
+              name="owner"
+              type="text"
+              disabled={true}
+              value={formData.ownerAddress}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="pricePerDay"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Price per day
+            </label>
+            <input
+              id="amount"
+              name="amount"
+              type="text"
+              disabled={true}
+              value={car.pricePerDay}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="adminFee"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Admin fee
+            </label>
+            <input
+              id="adminFee"
+              name="adminFee"
+              type="text"
+              disabled={true}
+              value={adminFee}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="total_days_to_rent"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Total days to rent
+            </label>
+            <input
+              id="total_days_to_rent"
+              name="total_days_to_rent"
+              type="number"
+              value={formData.total_days_to_rent}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="totalAmount"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Total amount
+            </label>
+            <input
+              id="totalAmount"
+              name="totalAmount"
+              type="text"
+              disabled={true}
+              value={totalAmount}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+            />
+          </div>
+
+          <div className="flex justify-end gap-4 space-x-3 pt-2 pb-6">
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={isSubmitting || isLoading}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 cursor-pointer"
+            >
+              {isSubmitting
+                ? "Renting..."
+                : isLoading
+                  ? "Loading..."
+                  : "Rent Car"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </Modal>
+  );
+};

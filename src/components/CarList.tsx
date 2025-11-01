@@ -1,12 +1,16 @@
+import { useState } from "react";
+import useModal from "../hooks/useModal";
 import { ICar } from "../interfaces/car";
 import { CarStatus } from "../interfaces/car-status";
 import { IRentACarContract } from "../interfaces/contract";
+import { RentCar } from "../interfaces/rent-car";
 import { UserRole } from "../interfaces/user-role";
 import { useStellarAccounts } from "../providers/StellarAccountProvider";
 import { stellarService } from "../services/stellar.service";
 import { walletService } from "../services/wallet.service";
 import { shortenAddress } from "../utils/shorten-address";
 import { ONE_XLM_IN_STROOPS } from "../utils/xlm-in-stroops";
+import { RentCarModal } from "./RentCarForm";
 
 interface CarsListProps {
   cars: ICar[];
@@ -15,6 +19,10 @@ interface CarsListProps {
 export const CarsList = ({ cars }: CarsListProps) => {
   const { walletAddress, selectedRole, setHashId, setCars } =
     useStellarAccounts();
+
+  const [selectedCard, setSelectedCar] = useState<ICar>();
+
+  const { showModal, openModal, closeModal } = useModal();
 
   const handleDelete = async (owner: string) => {
     const contractClient =
@@ -43,19 +51,24 @@ export const CarsList = ({ cars }: CarsListProps) => {
     setHashId(txHash as string);
   };
 
-  const handleRent = async (
-    car: ICar,
-    renter: string,
-    totalDaysToRent: number,
-  ) => {
+  const handleRentCar = (car: ICar) => {
+    setSelectedCar(car);
+    openModal();
+  };
+
+  const handleReturn = (renter: string, owner: string) => {
+    alert(JSON.stringify({ info: "TODO", renter, owner }));
+  };
+
+  const handleConfirmRentCar = async (rentCar: RentCar) => {
     const contractClient =
       await stellarService.buildClient<IRentACarContract>(walletAddress);
 
     const result = await contractClient.rental({
-      renter,
-      owner: car.ownerAddress,
-      total_days_to_rent: totalDaysToRent,
-      amount: car.pricePerDay * totalDaysToRent * ONE_XLM_IN_STROOPS,
+      renter: rentCar.renterAddress,
+      owner: rentCar.ownerAddress,
+      total_days_to_rent: rentCar.total_days_to_rent,
+      amount: rentCar.amount,
     });
     const xdr = result.toXDR();
 
@@ -64,11 +77,13 @@ export const CarsList = ({ cars }: CarsListProps) => {
 
     setCars((prev) =>
       prev.map((c) =>
-        c.ownerAddress === car.ownerAddress
+        c.ownerAddress === rentCar.ownerAddress
           ? { ...c, status: CarStatus.RENTED }
           : c,
       ),
     );
+
+    closeModal();
     setHashId(txHash as string);
   };
 
@@ -97,7 +112,7 @@ export const CarsList = ({ cars }: CarsListProps) => {
       );
     }
 
-    if (selectedRole === UserRole.OWNER) {
+    if (selectedRole === UserRole.OWNER && car.status === CarStatus.AVAILABLE) {
       const amount = car.pricePerDay * 3 * ONE_XLM_IN_STROOPS;
       return (
         <button
@@ -115,10 +130,21 @@ export const CarsList = ({ cars }: CarsListProps) => {
     ) {
       return (
         <button
-          onClick={() => void handleRent(car, walletAddress, 3)}
+          onClick={() => void handleRentCar(car)}
           className="px-3 py-1 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
         >
           Rent
+        </button>
+      );
+    }
+
+    if (selectedRole === UserRole.RENTER && car.status === CarStatus.RENTED) {
+      return (
+        <button
+          onClick={() => void handleReturn(walletAddress, car.ownerAddress)}
+          className="px-3 py-1 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+        >
+          Return
         </button>
       );
     }
@@ -204,6 +230,15 @@ export const CarsList = ({ cars }: CarsListProps) => {
             ))}
           </tbody>
         </table>
+
+        {showModal && selectedCard && (
+          <RentCarModal
+            car={selectedCard}
+            renter={walletAddress}
+            onRentCar={handleConfirmRentCar}
+            onCancel={closeModal}
+          />
+        )}
       </div>
     </div>
   );

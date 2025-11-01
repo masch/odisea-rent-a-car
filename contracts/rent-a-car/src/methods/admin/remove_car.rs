@@ -17,6 +17,8 @@ pub fn remove_car(env: &Env, owner: &Address) -> Result<(), Error> {
         return Err(Error::CarNotFound);
     }
 
+    // TODO: Validate if car is not Rented
+
     delete_car(env, owner);
 
     events::remove_car::car_removed(env, owner);
