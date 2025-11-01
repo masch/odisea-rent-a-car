@@ -4,7 +4,7 @@ use crate::{
     events,
     methods::token::token::token_transfer,
     storage::{
-        admin::{read_admin, read_admin_balance, read_admin_fee, write_admin_balance},
+        admin::{read_admin_balance, read_admin_fee, write_admin_balance},
         car::{read_car, write_car},
         contract_balance::{read_contract_balance, write_contract_balance},
         rental::write_rental,
@@ -46,19 +46,12 @@ pub fn rental(
     }
 
     // 2. Business Logic
-    let admin = read_admin(&env)?;
     let admin_fee_amount = read_admin_fee(&env);
     let rental_amount: i128 = amount
         .checked_sub(admin_fee_amount)
         .ok_or(Error::MathOverflow)?;
 
-    token_transfer(
-        &env,
-        &renter,
-        &env.current_contract_address(),
-        &rental_amount,
-    )?;
-    token_transfer(&env, &renter, &admin, &admin_fee_amount)?;
+    token_transfer(&env, &renter, &env.current_contract_address(), &amount)?;
 
     let mut admin_balance = read_admin_balance(&env);
     admin_balance = admin_balance
@@ -68,12 +61,12 @@ pub fn rental(
     car.car_status = CarStatus::Rented;
     car.available_to_withdraw = car
         .available_to_withdraw
-        .checked_add(amount)
+        .checked_add(rental_amount)
         .ok_or(Error::MathOverflow)?;
 
     let rental = Rental {
         total_days_to_rent,
-        amount,
+        amount: rental_amount,
     };
 
     let mut contract_balance = read_contract_balance(&env);

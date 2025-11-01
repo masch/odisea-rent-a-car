@@ -47,17 +47,18 @@ fn test_rental_car(admin_fee: i128) {
     let updated_admin_balance = env.as_contract(&contract.address, || read_admin_balance(&env));
     assert_eq!(updated_admin_balance, admin_fee);
 
+    let rental_amount = amount - admin_fee;
     let car = env
         .as_contract(&contract.address, || read_car(&env, &owner))
         .unwrap(); // TODO handle error properly
     assert_eq!(car.car_status, CarStatus::Rented);
-    assert_eq!(car.available_to_withdraw, amount);
+    assert_eq!(car.available_to_withdraw, rental_amount);
 
     let rental = env
         .as_contract(&contract.address, || read_rental(&env, &renter, &owner))
         .unwrap(); // TODO handle error properly
     assert_eq!(rental.total_days_to_rent, total_days);
-    assert_eq!(rental.amount, amount);
+    assert_eq!(rental.amount, rental_amount);
     assert_eq!(
         contract_events,
         vec![
