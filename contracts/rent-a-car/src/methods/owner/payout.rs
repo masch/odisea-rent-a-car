@@ -6,7 +6,7 @@ use crate::{
     storage::{
         car::{read_car, write_car},
         contract_balance::{read_contract_balance, write_contract_balance},
-        types::error::Error,
+        types::{car_status::CarStatus, error::Error},
     },
 };
 
@@ -18,6 +18,10 @@ pub fn payout(env: &Env, owner: &Address, amount: i128) -> Result<(), Error> {
     }
 
     let mut car = read_car(&env, &owner)?;
+
+    if car.car_status != CarStatus::Available {
+        return Err(Error::CarNotAvailable);
+    }
 
     if amount > car.available_to_withdraw {
         return Err(Error::InsufficientBalance);

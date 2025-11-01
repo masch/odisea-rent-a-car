@@ -8,7 +8,7 @@ use crate::{
         },
         owner::payout::payout,
         public::{get_car_status::get_car_status, initialize::initialize},
-        renter::rental::rental,
+        renter::{rental::rental, return_car::return_car},
     },
     storage::types::{car_status::CarStatus, error::Error},
 };
@@ -55,5 +55,9 @@ impl RentACarContractTrait for RentACarContract {
 
     fn remove_car(env: &Env, owner: Address) -> Result<(), Error> {
         remove_car(env, &owner)
+    }
+
+    fn return_car(env: &Env, renter: Address, owner: Address) -> Result<(), Error> {
+        return_car(env, &renter, &owner)
     }
 }

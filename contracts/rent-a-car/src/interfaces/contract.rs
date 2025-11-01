@@ -16,5 +16,6 @@ pub trait RentACarContractTrait {
         amount: i128,
     ) -> Result<(), Error>;
     fn remove_car(env: &Env, owner: Address) -> Result<(), Error>;
+    fn return_car(env: &Env, renter: Address, owner: Address) -> Result<(), Error>;
     fn payout_owner(env: &Env, owner: Address, amount: i128) -> Result<(), Error>;
 }
