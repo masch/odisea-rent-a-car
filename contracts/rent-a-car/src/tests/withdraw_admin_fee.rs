@@ -46,6 +46,10 @@ pub fn test_withdraw_admin_fee_with_a_admin_user_with_a_rental_with_admin_fee_su
     let contract_admin_fee = env.as_contract(&contract.address, || read_admin_balance(&env));
     assert_eq!(contract_admin_fee, admin_fee);
 
+    let car_available_to_withdraw = contract.get_car_available_to_withdraw(&owner);
+    let rental_amount = amount - admin_fee;
+    assert_eq!(car_available_to_withdraw, rental_amount);
+
     withdraw_admin_fee(&env, &contract, &admin);
 
     let contract_events = get_contract_events(&env, &contract.address);

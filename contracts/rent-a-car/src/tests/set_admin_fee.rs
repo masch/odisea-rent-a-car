@@ -42,6 +42,25 @@ pub fn test_set_admin_fee_with_admin_user_successfully() {
 }
 
 #[test]
+pub fn test_get_admin_fee_successfully() {
+    let ContractTest {
+        env,
+        contract,
+        admin,
+        ..
+    } = ContractTest::setup();
+
+    let admin_fee = contract.get_admin_fee();
+    assert_eq!(admin_fee, 0);
+
+    let admin_fee = 666_i128;
+    set_admin_fee(&env, &contract, &admin, admin_fee);
+
+    let admin_fee_contract = contract.get_admin_fee();
+    assert_eq!(admin_fee_contract, admin_fee);
+}
+
+#[test]
 #[should_panic(expected = "Error(Auth, InvalidAction)")]
 pub fn test_set_admin_fee_with_a_non_admin_user_fails() {
     let ContractTest { env, contract, .. } = ContractTest::setup();
