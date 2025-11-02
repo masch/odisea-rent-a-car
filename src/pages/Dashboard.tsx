@@ -1,11 +1,13 @@
 import { CarsList } from "../components/CarList";
 import { CreateCarForm } from "../components/CreateCarForm";
+import { SetAdminFeeModal } from "../components/SetAdminFeeModal";
 import StellarExpertLink from "../components/StellarExpertLink";
 import useModal from "../hooks/useModal";
 import { ICar } from "../interfaces/car";
 import { CarStatus } from "../interfaces/car-status";
 import { IRentACarContract } from "../interfaces/contract";
 import { CreateCar } from "../interfaces/create-car";
+import { SetAdminFee } from "../interfaces/set-admin-fee";
 import { UserRole } from "../interfaces/user-role";
 import { useStellarAccounts } from "../providers/StellarAccountProvider";
 import { stellarService } from "../services/stellar.service";
@@ -15,7 +17,45 @@ import { ONE_XLM_IN_STROOPS } from "../utils/xlm-in-stroops";
 export default function Dashboard() {
   const { hashId, cars, walletAddress, setCars, setHashId, selectedRole } =
     useStellarAccounts();
-  const { showModal, openModal, closeModal } = useModal();
+  const {
+    showModal: showModalCreateCar,
+    openModal: openModalCreateCar,
+    closeModal: closeModalCreateCar,
+  } = useModal();
+  const {
+    showModal: showModalSetAdminFee,
+    openModal: openModalSetAdminFee,
+    closeModal: closeModalSetAdminFee,
+  } = useModal();
+
+  const handleWithdrawFee = async () => {
+    const contractClient =
+      await stellarService.buildClient<IRentACarContract>(walletAddress);
+
+    const withdrawAdminFeeResult = await contractClient.withdraw_admin_fee();
+    const xdr = withdrawAdminFeeResult.toXDR();
+
+    const signedTx = await walletService.signTransaction(xdr);
+    const txHash = await stellarService.submitTransaction(signedTx.signedTxXdr);
+
+    setHashId(txHash as string);
+  };
+
+  const handleSetAdminFee = async (formData: SetAdminFee) => {
+    const contractClient =
+      await stellarService.buildClient<IRentACarContract>(walletAddress);
+
+    const setAdminFeeResult = await contractClient.set_admin_fee({
+      admin_fee: formData.amount * ONE_XLM_IN_STROOPS,
+    });
+    const xdr = setAdminFeeResult.toXDR();
+
+    const signedTx = await walletService.signTransaction(xdr);
+    const txHash = await stellarService.submitTransaction(signedTx.signedTxXdr);
+
+    setHashId(txHash as string);
+    closeModalSetAdminFee();
+  };
 
   const handleCreateCar = async (formData: CreateCar) => {
     const { brand, model, color, passengers, pricePerDay, ac, ownerAddress } =
@@ -45,7 +85,7 @@ export default function Dashboard() {
 
     setCars((prevCars) => [...prevCars, newCar]);
     setHashId(txHash as string);
-    closeModal();
+    closeModalCreateCar();
   };
 
   return (
@@ -55,21 +95,47 @@ export default function Dashboard() {
           Cars Catalog
         </h1>
         {selectedRole === UserRole.ADMIN && (
-          <button
-            onClick={openModal}
-            className="group px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
-          >
-            <span className="flex items-center gap-2">Add Car</span>
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={openModalSetAdminFee}
+              className="group px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
+            >
+              <span className="flex items-center gap-2">Admin fee</span>
+            </button>
+            <button
+              onClick={() => {
+                void handleWithdrawFee();
+              }}
+              className="group px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
+            >
+              <span className="flex items-center gap-2">Withdraw fee</span>
+            </button>
+
+            <button
+              onClick={openModalCreateCar}
+              className="group px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
+            >
+              <span className="flex items-center gap-2">Add Car</span>
+            </button>
+          </div>
         )}
       </div>
 
       {cars && <CarsList cars={cars} />}
 
-      {showModal && (
-        <CreateCarForm onCreateCar={handleCreateCar} onCancel={closeModal} />
+      {showModalSetAdminFee && (
+        <SetAdminFeeModal
+          onSetAdminFee={handleSetAdminFee}
+          onCancel={closeModalSetAdminFee}
+        />
       )}
 
+      {showModalCreateCar && (
+        <CreateCarForm
+          onCreateCar={handleCreateCar}
+          onCancel={closeModalCreateCar}
+        />
+      )}
       {hashId && <StellarExpertLink url={hashId} />}
     </div>
   );

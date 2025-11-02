@@ -24,7 +24,7 @@ export const RentCarModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { walletAddress } = useStellarAccounts();
 
-  const [adminFee, setAdminFee] = useState(0n);
+  const [adminFee, setAdminFee] = useState(0);
   const [formData, setFormData] = useState<RentCar>({
     renterAddress: renter,
     total_days_to_rent: 1,
@@ -32,16 +32,14 @@ export const RentCarModal = ({
     amount: 0,
   });
 
-  const totalAmount =
-    BigInt(car.pricePerDay) * BigInt(formData.total_days_to_rent) + adminFee;
+  const totalAmount = car.pricePerDay * formData.total_days_to_rent + adminFee;
 
   useEffect(() => {
     const fetchAdminFee = async () => {
       const contractClient =
         await stellarService.buildClient<IRentACarContract>(walletAddress);
       const { result } = await contractClient.get_admin_fee();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      setAdminFee(result.value() / BigInt(ONE_XLM_IN_STROOPS));
+      setAdminFee(Number(result) / ONE_XLM_IN_STROOPS);
 
       setIsLoading(false);
     };
