@@ -12,9 +12,6 @@ init-local-stellar:
 run: 
 	pnpm run dev
 
-stellar-admin-key:
-	@echo $(ADMIN_KEY)
-
 stellar-owner-key:
 	@echo $(OWNER_KEY)
 
@@ -26,6 +23,9 @@ stellar-public-admin-add:
 
 stellar-public-admin-get-secret:
 	stellar keys secret public-admin
+
+stellar-public-admin-get-address:
+	@echo $(PUBLIC_ADMIN_KEY)
 
 stellar-public-owner-add:
 	stellar keys add public-owner --secret-key

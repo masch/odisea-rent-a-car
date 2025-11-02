@@ -160,3 +160,43 @@ fn withdraw_admin_fee(
         }])
         .withdraw_admin_fee();
 }
+
+#[test]
+pub fn test_get_withdraw_admin_fee_successfully() {
+    let ContractTest {
+        env,
+        contract,
+        admin,
+        token,
+        ..
+    } = ContractTest::setup();
+    let (_, token_admin, token_issuer) = token;
+
+    let admin_fee = 666_i128;
+
+    let owner = Address::generate(&env);
+    let renter = Address::generate(&env);
+    let price_per_day = 1500_i128;
+    let total_days = 3;
+    let amount = 4500_i128;
+
+    set_admin_fee(&env, &contract, &admin, admin_fee);
+
+    mint_token(&env, token_admin, token_issuer, &renter);
+    add_car(&env, &contract, &admin, &owner, price_per_day);
+
+    let admin_fee_to_withdraw = contract.get_admin_fee_to_withdraw();
+    assert_eq!(admin_fee_to_withdraw, 0);
+    rental(
+        &env,
+        &contract,
+        &token.0.address,
+        &owner,
+        &renter,
+        total_days,
+        amount,
+    );
+
+    let admin_fee_to_withdraw = contract.get_admin_fee_to_withdraw();
+    assert_eq!(admin_fee_to_withdraw, admin_fee);
+}

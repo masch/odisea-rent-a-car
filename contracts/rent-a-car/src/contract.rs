@@ -8,7 +8,8 @@ use crate::{
         },
         owner::payout::payout,
         public::{
-            get_admin_fee::get_admin_fee, get_car_available_to_widraw::get_car_available_to_widraw,
+            get_admin_fee::get_admin_fee, get_admin_fee_to_withdraw::get_admin_fee_to_withdraw,
+            get_car_available_to_widraw::get_car_available_to_widraw,
             get_car_status::get_car_status, initialize::initialize,
         },
         renter::{rental::rental, return_car::return_car},
@@ -28,6 +29,10 @@ impl RentACarContractTrait for RentACarContract {
 
     fn get_admin_fee(env: &Env) -> i128 {
         get_admin_fee(env)
+    }
+
+    fn get_admin_fee_to_withdraw(env: &Env) -> i128 {
+        get_admin_fee_to_withdraw(env)
     }
 
     fn get_car_available_to_withdraw(env: &Env, owner: Address) -> Result<i128, Error> {
