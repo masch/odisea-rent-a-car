@@ -10,6 +10,7 @@ import { stellarService } from "../services/stellar.service";
 import { walletService } from "../services/wallet.service";
 import { shortenAddress } from "../utils/shorten-address";
 import { RentCarModal } from "./RentCarForm";
+import { ONE_XLM_IN_STROOPS } from "../utils/xlm-in-stroops";
 
 interface CarsListProps {
   cars: ICar[];
@@ -55,7 +56,7 @@ export const CarsList = ({ cars }: CarsListProps) => {
     const signedTx = await walletService.signTransaction(xdr);
     const txHash = await stellarService.submitTransaction(signedTx.signedTxXdr);
 
-    alert(`The ${amount} was sent to ${owner}`);
+    alert(`The ${amount / ONE_XLM_IN_STROOPS} was sent to ${owner}`);
 
     setHashId(txHash as string);
   };
@@ -125,22 +126,24 @@ export const CarsList = ({ cars }: CarsListProps) => {
   };
 
   const renderActionButton = (car: ICar) => {
-    if (selectedRole === UserRole.ADMIN && car.status != CarStatus.RENTED) {
+    if (selectedRole === UserRole.ADMIN) {
       return (
         <button
           onClick={() => void handleDelete(car.ownerAddress)}
-          className="px-3 py-1 bg-red-600 text-white rounded font-semibold hover:bg-red-700 transition-colors cursor-pointer"
+          disabled={car.status != CarStatus.AVAILABLE}
+          className="px-3 py-1 bg-red-600 text-white rounded font-semibold hover:bg-red-700 transition-colors cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
         >
           Delete
         </button>
       );
     }
 
-    if (selectedRole === UserRole.OWNER && car.status === CarStatus.AVAILABLE) {
+    if (selectedRole === UserRole.OWNER) {
       return (
         <button
           onClick={() => void handlePayout(car.ownerAddress)}
-          className="px-3 py-1 bg-green-600 text-white rounded font-semibold hover:bg-green-700 transition-colors cursor-pointer"
+          disabled={car.status !== CarStatus.AVAILABLE}
+          className="px-3 py-1 bg-green-600 text-white rounded font-semibold transition-colors cursor-pointer hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
         >
           Withdraw
         </button>
@@ -154,7 +157,7 @@ export const CarsList = ({ cars }: CarsListProps) => {
       return (
         <button
           onClick={() => void handleRentCar(car)}
-          className="px-3 py-1 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+          className="px-3 py-1 bg-green-600 text-white rounded font-semibold hover:bg-green-700 transition-colors cursor-pointer"
         >
           Rent
         </button>

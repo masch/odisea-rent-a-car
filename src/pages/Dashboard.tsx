@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { CarsList } from "../components/CarList";
 import { CreateCarForm } from "../components/CreateCarForm";
 import { SetAdminFeeModal } from "../components/SetAdminFeeModal";
@@ -28,6 +29,25 @@ export default function Dashboard() {
     closeModal: closeModalSetAdminFee,
   } = useModal();
 
+  const [availableAdminFeeToWthdraw, setAvailableAdminFeeToWthdraw] =
+    useState(0);
+
+  useEffect(() => {
+    if (selectedRole !== UserRole.ADMIN) return;
+
+    const loadAdminFreeToWithdraw = async () => {
+      const contractClient =
+        await stellarService.buildClient<IRentACarContract>(walletAddress);
+
+      const { result: available_to_withdraw } =
+        await contractClient.get_admin_fee_to_withdraw();
+
+      setAvailableAdminFeeToWthdraw(Number(available_to_withdraw));
+    };
+
+    void loadAdminFreeToWithdraw();
+  }, [selectedRole, walletAddress]);
+
   const handleWithdrawFee = async () => {
     const contractClient =
       await stellarService.buildClient<IRentACarContract>(walletAddress);
@@ -38,6 +58,7 @@ export default function Dashboard() {
     const signedTx = await walletService.signTransaction(xdr);
     const txHash = await stellarService.submitTransaction(signedTx.signedTxXdr);
 
+    setAvailableAdminFeeToWthdraw(0);
     setHashId(txHash as string);
   };
 
@@ -106,6 +127,7 @@ export default function Dashboard() {
               onClick={() => {
                 void handleWithdrawFee();
               }}
+              disabled={availableAdminFeeToWthdraw <= 0}
               className="group px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:transform-none cursor-pointer"
             >
               <span className="flex items-center gap-2">Withdraw fee</span>

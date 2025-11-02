@@ -12,9 +12,6 @@ init-local-stellar:
 run: 
 	pnpm run dev
 
-stellar-admin-key:
-	@echo $(ADMIN_KEY)
-
 stellar-owner-key:
 	@echo $(OWNER_KEY)
 
@@ -27,6 +24,9 @@ stellar-public-admin-add:
 stellar-public-admin-get-secret:
 	stellar keys secret public-admin
 
+stellar-public-admin-get-address:
+	@echo $(PUBLIC_ADMIN_KEY)
+
 stellar-public-owner-add:
 	stellar keys add public-owner --secret-key
 
@@ -35,6 +35,12 @@ stellar-public-owner-get-secret:
 
 contract-test:
 	cargo test
+
+contract-test-coverage-html:
+	cargo llvm-cov test --html --open
+
+contract-test-coverage-lcov:
+	cargo llvm-cov test --lcov --output-path=lcov.info
 
 contract-build:
 	rm -rf target/wasm32v1-none/ && cargo build --target wasm32v1-none --release && stellar contract optimize --wasm target/wasm32v1-none/release/rent_a_car.wasm
