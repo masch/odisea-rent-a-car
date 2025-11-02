@@ -39,6 +39,10 @@ export interface IRentACarContract extends IBaseContractClient {
 
   get_admin_fee: () => Promise<{ result: xdr.ScVal }>;
 
+  set_admin_fee: ({ admin_fee }: { admin_fee: number }) => Promise<this>;
+
+  withdraw_admin_fee: () => Promise<this>;
+
   get_car_available_to_withdraw: ({
     owner,
   }: {
